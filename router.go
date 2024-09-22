@@ -10,8 +10,8 @@ type Router struct {
 
 func (r Router) HandleWithIter() {
 	var count int
-	for i, sum := range r.s.Iter() {
-		_, _ = i, sum
+	for sum := range r.s.Iter() {
+		_ = sum
 		count++
 	}
 	if count != 100 {
@@ -21,8 +21,8 @@ func (r Router) HandleWithIter() {
 
 func (r Router) HandleWithPipeline() {
 	var count int
-	for i, sum := range r.s.Pipeline() {
-		_, _ = i, sum
+	for sum := range r.s.Pipeline() {
+		_ = sum
 		count++
 	}
 	if count != 100 {
@@ -32,8 +32,8 @@ func (r Router) HandleWithPipeline() {
 
 func (r Router) HandleWithFunOut() {
 	var count int
-	for i, sum := range r.s.FunOut() {
-		_, _ = i, sum
+	for sum := range r.s.FunOut() {
+		_ = sum
 		count++
 	}
 	if count != 100 {

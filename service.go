@@ -10,63 +10,81 @@ type Service struct {
 	r Repository
 }
 
-func (s Service) Iter() iter.Seq2[int, int] {
-	return func(yield func(int, int) bool) {
-		for i, item := range s.r.Generate() {
+func (s Service) Iter() iter.Seq[int] {
+	return func(yield func(int) bool) {
+		for _, item := range s.r.Generate() {
 			p := s.sumPrice(item[0], item[1])
-			_ = yield(i, p)
+			_ = yield(p)
 		}
 	}
 }
 
-func (s Service) Pipeline() iter.Seq2[int, int] {
-	return func(yield func(int, int) bool) {
-		var wg sync.WaitGroup
-		for i, item := range s.r.Generate() {
-			wg.Add(1)
-			p := s.sumPrice(item[0], item[1])
-			go func() {
-				defer wg.Done()
-				_ = yield(i, p)
-			}()
+func (s Service) Pipeline() iter.Seq[int] {
+	ch := make(chan [2]int)
+	go func() {
+		defer close(ch)
+		for _, item := range s.r.Generate() {
+			ch <- item
 		}
-		wg.Wait()
+	}()
+	return func(yield func(int) bool) {
+		for item := range ch {
+			p := s.sumPrice(item[0], item[1])
+			_ = yield(p)
+		}
 	}
 }
 
-func (s Service) FunOut() iter.Seq2[int, int] {
-	source := s.r.Generate()
+func (s Service) FunOut() iter.Seq[int] {
+	ch := make(chan [2]int)
+	go func() {
+		defer close(ch)
+		for _, item := range s.r.Generate() {
+			ch <- item
+		}
+	}()
 
 	// Fun-Out
 	procs := runtime.GOMAXPROCS(0)
-	seq2s := make([]iter.Seq2[int, int], procs)
-	for p := range runtime.GOMAXPROCS(0) {
-		seq2s[p] = func(yield func(int, int) bool) {
-			go func() {
-				for i, item := range source {
-					p := s.sumPrice(item[0], item[1])
-					go func() {
-						_ = yield(i, p)
-					}()
+	var outChs = make([]chan int, 0, procs)
+	for range procs {
+		outCh := make(chan int)
+		go func() {
+			defer close(outCh)
+			for {
+				item, ok := <-ch
+				if !ok {
+					return
 				}
-			}()
-		}
+				p := s.sumPrice(item[0], item[1])
+				outCh <- p
+			}
+		}()
+		outChs = append(outChs, outCh)
 	}
 
 	// Fun-In
-	return func(yield func(int, int) bool) {
-		var wg sync.WaitGroup
-		wg.Add(procs)
+	var wg sync.WaitGroup
 
-		for _, seq2 := range seq2s {
-			go func() {
-				defer wg.Done()
-				for i, sum := range seq2 {
-					_ = yield(i, sum)
-				}
-			}()
-		}
+	inCh := make(chan int)
+	for _, outCh := range outChs {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for p := range outCh {
+				inCh <- p
+			}
+		}()
+	}
+
+	go func() {
 		wg.Wait()
+		close(inCh)
+	}()
+	return func(yield func(int) bool) {
+		for p := range inCh {
+			_ = yield(p)
+		}
 	}
 }
 
