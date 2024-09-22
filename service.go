@@ -19,6 +19,15 @@ func (s Service) Iter() iter.Seq[int] {
 	}
 }
 
+func (s Service) Loop() []int {
+	items := s.r.items
+	var ps = make([]int, len(items))
+	for i, item := range items {
+		ps[i] = s.sumPrice(item[0], item[1])
+	}
+	return ps
+}
+
 func (s Service) Pipeline() iter.Seq[int] {
 	ch := make(chan [2]int)
 	go func() {

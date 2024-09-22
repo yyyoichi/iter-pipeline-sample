@@ -19,6 +19,17 @@ func (r Router) HandleWithIter() {
 	}
 }
 
+func (r Router) HandleWithLoop() {
+	var count int
+	for sum := range r.s.Loop() {
+		_ = sum
+		count++
+	}
+	if count != 100 {
+		log.Println("Iter", count)
+	}
+}
+
 func (r Router) HandleWithPipeline() {
 	var count int
 	for sum := range r.s.Pipeline() {

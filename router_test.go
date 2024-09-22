@@ -11,6 +11,12 @@ func BenchmarkRouter(b *testing.B) {
 		}
 	})
 
+	b.Run("Loop", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			router.HandleWithLoop()
+		}
+	})
+
 	b.Run("Pipeline", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			router.HandleWithPipeline()
