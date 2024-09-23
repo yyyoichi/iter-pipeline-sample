@@ -5,9 +5,11 @@
 `repository` -> `service` -> `router`
 それぞれを`iter`, `loop`, `Pipeline`, `Fun-Out`で計測。
 
+詳細は[blog.yyyoichi.com](https://blog.yyyoichi.com/posts/202409230745/)から。
+
 ## 重い処理ベンチマーク(100_000)
 
-合計値の計算で、無駄な処理を10万回繰り返すパターンで計測。
+`service`で、無駄な処理を10万回繰り返すパターンで計測。
 
 ```text
 goos: linux
