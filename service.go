@@ -98,5 +98,24 @@ func (s Service) FunOut() iter.Seq[int] {
 }
 
 func (s *Service) sumPrice(price, num int) int {
-	return price * num
+	n := 100_000
+
+	var sum int
+	for range n {
+		for p := range price {
+			sum += p
+		}
+		for n := range num {
+			sum += n
+		}
+	}
+	for range n {
+		for p := range price {
+			sum -= p
+		}
+		for n := range num {
+			sum -= n
+		}
+	}
+	return sum + price*num
 }
